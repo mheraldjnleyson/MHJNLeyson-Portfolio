@@ -1,0 +1,438 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // ==========================================================================
+    // 1. Mobile Navigation Toggle
+    // ==========================================================================
+    const menuToggle = document.getElementById('menuToggle');
+    const navMenu = document.getElementById('navMenu');
+
+    if (menuToggle && navMenu) {
+        menuToggle.addEventListener('click', () => {
+            navMenu.classList.toggle('open');
+            const icon = menuToggle.querySelector('i');
+            if (navMenu.classList.contains('open')) {
+                icon.className = 'fa-solid fa-xmark';
+            } else {
+                icon.className = 'fa-solid fa-code';
+            }
+        });
+    }
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (navMenu.classList.contains('open')) {
+                navMenu.classList.remove('open');
+                menuToggle.querySelector('i').className = 'fa-solid fa-code';
+            }
+        });
+    });
+
+    // ==========================================================================
+    // 2. Interactive Particles Canvas Background (Moving UX)
+    // ==========================================================================
+    const canvas = document.getElementById('particlesCanvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouse = { x: null, y: null, radius: 100 };
+
+        const resizeCanvas = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        window.addEventListener('mouseleave', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = Math.random() * 0.8 - 0.4;
+                this.speedY = Math.random() * 0.8 - 0.4;
+                this.color = Math.random() > 0.5 ? '#00f2fe' : '#3b82f6';
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Bounce off borders
+                if (this.x > canvas.width || this.x < 0) this.speedX = -this.speedX;
+                if (this.y > canvas.height || this.y < 0) this.speedY = -this.speedY;
+
+                // Mouse interaction physics
+                if (mouse.x && mouse.y) {
+                    let dx = mouse.x - this.x;
+                    let dy = mouse.y - this.y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < mouse.radius) {
+                        let force = (mouse.radius - distance) / mouse.radius;
+                        let directionX = dx / distance;
+                        let directionY = dy / distance;
+                        this.x -= directionX * force * 2;
+                        this.y -= directionY * force * 2;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        const initParticles = () => {
+            const count = Math.min(Math.floor(canvas.width / 15), 80);
+            particles = [];
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle());
+            }
+        };
+        initParticles();
+
+        const animateParticles = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // Connect nearby particles
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a; b < particles.length; b++) {
+                    let dx = particles[a].x - particles[b].x;
+                    let dy = particles[a].y - particles[b].y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 110) {
+                        ctx.strokeStyle = `rgba(0, 242, 254, ${0.15 - dist / 110})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        };
+        animateParticles();
+    }
+
+    // ==========================================================================
+    // 3. Simulated IDE Data & Interaction
+    // ==========================================================================
+    const ideFiles = {
+        db_connect: `<span class="code-keyword">&lt;?php</span>
+<span class="code-comment">// Establish database connection to Clinic System</span>
+<span class="code-variable">$host</span> = <span class="code-string">"localhost"</span>;
+<span class="code-variable">$user</span> = <span class="code-string">"root"</span>;
+<span class="code-variable">$pass</span> = <span class="code-string">"doctor_admin"</span>;
+<span class="code-variable">$dbname</span> = <span class="code-string">"clinic_records"</span>;
+
+<span class="code-variable">$conn</span> = <span class="code-keyword">new</span> mysqli(<span class="code-variable">$host</span>, <span class="code-variable">$user</span>, <span class="code-variable">$pass</span>, <span class="code-variable">$dbname</span>);
+<span class="code-keyword">if</span> (<span class="code-variable">$conn</span>-&gt;connect_error) {
+    <span class="code-keyword">die</span>(<span class="code-string">"Connection failed: "</span> . <span class="code-variable">$conn</span>-&gt;connect_error);
+}
+<span class="code-comment">// Role-Based Access Control (RBAC) verified</span>`,
+
+        patient_qr: `<span class="code-comment">// QR-based Patient Identification & BMI Calculator</span>
+<span class="code-keyword">function</span> <span class="code-variable">generatePatientQR</span>(patientId) {
+    <span class="code-keyword">return</span> QRCode.generate({
+        text: <span class="code-string">\`PATIENT-\${patientId}\`</span>,
+        size: <span class="code-number">256</span>,
+        errorCorrectionLevel: <span class="code-string">'H'</span>
+    });
+}
+
+<span class="code-keyword">function</span> <span class="code-variable">computeBMI</span>(weight, heightCm) {
+    <span class="code-keyword">const</span> heightM = heightCm / <span class="code-number">100</span>;
+    <span class="code-keyword">return</span> (weight / (heightM * heightM)).toFixed(<span class="code-number">2</span>);
+}`,
+
+        aws_deploy: `<span class="code-comment">#!/bin/bash</span>
+<span class="code-comment"># AWS Deployment automation for Clinic System</span>
+<span class="code-keyword">echo</span> <span class="code-string">"Initializing deployment to AWS EC2 instance..."</span>
+git pull origin main
+systemctl restart apache2
+
+<span class="code-keyword">echo</span> <span class="code-string">"Optimizing MySQL databases..."</span>
+mysql -u root -p -e <span class="code-string">"CALL OptimizeIndexes();"</span>
+<span class="code-keyword">echo</span> <span class="code-string">"Deployment successful!"</span>`
+    };
+
+    const codeDisplay = document.getElementById('codeDisplay');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const sidebarTreeItems = document.querySelectorAll('.file-tree .tree-item.file');
+
+    const switchFile = (fileName) => {
+        if (!ideFiles[fileName]) return;
+
+        // Update tabs active state
+        tabBtns.forEach(btn => {
+            if (btn.dataset.file === fileName) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        // Update sidebar items
+        sidebarTreeItems.forEach(item => {
+            if (item.dataset.file === fileName) item.classList.add('active');
+            else item.classList.remove('active');
+        });
+
+        // Render code
+        codeDisplay.innerHTML = ideFiles[fileName];
+    };
+
+    // Set initial file
+    switchFile('db_connect');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => switchFile(btn.dataset.file));
+    });
+
+    sidebarTreeItems.forEach(item => {
+        item.addEventListener('click', () => switchFile(item.dataset.file));
+    });
+
+    // ==========================================================================
+    // 4. Hero Section Typing Effect
+    // ==========================================================================
+    const words = ["npm install developer-talent", "git commit -m 'ready to code'", "aws ec2 run-instances --image-id ami-leyson"];
+    let wordIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    const typewriter = document.getElementById('typewriter');
+
+    const typeEffect = () => {
+        if (!typewriter) return;
+
+        const currentWord = words[wordIndex];
+        if (isDeleting) {
+            typewriter.textContent = currentWord.substring(0, charIndex - 1);
+            charIndex--;
+        } else {
+            typewriter.textContent = currentWord.substring(0, charIndex + 1);
+            charIndex++;
+        }
+
+        let speed = isDeleting ? 30 : 60;
+
+        if (!isDeleting && charIndex === currentWord.length) {
+            speed = 2000; // Pause at end of word
+            isDeleting = true;
+        } else if (isDeleting && charIndex === 0) {
+            isDeleting = false;
+            wordIndex = (wordIndex + 1) % words.length;
+            speed = 500; // Pause before typing next
+        }
+
+        setTimeout(typeEffect, speed);
+    };
+    typeEffect();
+
+    // ==========================================================================
+    // 5. Interactive Console/Terminal Shell (UX moving logic)
+    // ==========================================================================
+    const terminalInput = document.getElementById('terminalInput');
+    const terminalOutputs = document.getElementById('terminalOutputs');
+    const shellBody = document.getElementById('shellBody');
+
+    if (terminalInput && terminalOutputs) {
+        terminalInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const cmd = terminalInput.value.trim().toLowerCase();
+                terminalInput.value = '';
+
+                // Add output of input command
+                const promptLine = document.createElement('p');
+                promptLine.className = 'shell-line';
+                promptLine.innerHTML = `<span class="shell-prompt">guest@mleyson-sh:~$</span> ${cmd}`;
+                terminalOutputs.appendChild(promptLine);
+
+                // Process output response
+                const responseLine = document.createElement('p');
+                responseLine.className = 'shell-line';
+
+                switch (cmd) {
+                    case 'help':
+                        responseLine.innerHTML = `Available commands:<br>
+                        - <span class="text-yellow">about</span>: Brief summary of Mark's developer profile<br>
+                        - <span class="text-yellow">skills</span>: List key competencies<br>
+                        - <span class="text-yellow">projects</span>: Display major systems developed<br>
+                        - <span class="text-yellow">cert</span>: View cloud certification status<br>
+                        - <span class="text-yellow">clear</span>: Clear terminal logs`;
+                        break;
+                    case 'about':
+                        responseLine.innerHTML = `Mark Herald John N. Leyson - IT Operations Associate & Software Developer.<br>
+                        Specializes in full stack PHP/JS development & AWS deployments. Custom site designer and Linux administrator.`;
+                        break;
+                    case 'skills':
+                        responseLine.innerHTML = `Languages: PHP, JS, Python, Java, SQL, CSS/HTML<br>
+                        Cloud Platform: AWS Certified Practitioner, Linux Admin, System Troubleshooter<br>
+                        Database: MySQL Schema Design, optimization.`;
+                        break;
+                    case 'projects':
+                        responseLine.innerHTML = `1. Clinic Records System (PHP/JS/MySQL, QR-patient tracking)<br>
+                        2. Capstone Asset Tracker (Inventory intranet, Figma workflow)`;
+                        break;
+                    case 'cert':
+                        responseLine.innerHTML = `AWS Certified Cloud Practitioner (CLF-C02) - July 2026. Credentials verified.`;
+                        break;
+                    case 'clear':
+                        terminalOutputs.innerHTML = '';
+                        responseLine.innerHTML = 'Logs cleared. Type "help" for action items.';
+                        break;
+                    case '':
+                        responseLine.innerHTML = '';
+                        break;
+                    default:
+                        responseLine.innerHTML = `<span style="color: #ef4444;">Command not found: "${cmd}". Type "help" for assistance.</span>`;
+                }
+
+                if (responseLine.innerHTML) {
+                    terminalOutputs.appendChild(responseLine);
+                }
+
+                // Autoscroll to bottom
+                shellBody.scrollTop = shellBody.scrollHeight;
+            }
+        });
+    }
+
+    // ==========================================================================
+    // 6. Interactive 3D Card Tilt & Mouse Glow Effect
+    // ==========================================================================
+    const tiltCards = document.querySelectorAll('[data-tilt]');
+    tiltCards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            // Disable transition while tracking mouse to avoid lag
+            card.style.transition = 'none';
+
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Set variables for CSS glow positioning
+            card.style.setProperty('--x', `${x}px`);
+            card.style.setProperty('--y', `${y}px`);
+
+            // Apply slight 3D rotate tilt
+            const width = rect.width;
+            const height = rect.height;
+            const rotateX = ((y / height) - 0.5) * -12; // tilt limit
+            const rotateY = ((x / width) - 0.5) * 12;
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            // Smoothly ease back to original position
+            card.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.3s ease, box-shadow 0.3s ease';
+            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+        });
+    });
+
+    // ==========================================================================
+    // 7. Contact Form Handler (Simulated Payload submission)
+    // ==========================================================================
+    const contactForm = document.getElementById('contactForm');
+    const formStatus = document.getElementById('formStatus');
+
+    if (contactForm && formStatus) {
+        contactForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const submitBtn = contactForm.querySelector('.submit-btn');
+            const origText = submitBtn.innerHTML;
+
+            submitBtn.innerHTML = '<span>sending_payload...</span> <i class="fa-solid fa-spinner fa-spin"></i>';
+            submitBtn.disabled = true;
+
+            setTimeout(() => {
+                submitBtn.innerHTML = origText;
+                submitBtn.disabled = false;
+                formStatus.className = 'form-status success';
+                formStatus.innerHTML = '<i class="fa-solid fa-circle-check"></i> payload_delivered: Message successfully sent.';
+                contactForm.reset();
+
+                 setTimeout(() => {
+                    formStatus.innerHTML = '';
+                    formStatus.className = 'form-status';
+                }, 5000);
+            }, 1200);
+        });
+    }
+
+    // ==========================================================================
+    // 8. Frontend Security Measures (Disable right-click, F12, Ctrl+U, Ctrl+Shift+I)
+    // ==========================================================================
+    // Disable context menu (Right-Click)
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+
+    // Disable keyboard shortcuts for DevTools / View Source
+    document.addEventListener('keydown', (e) => {
+        // Disable F12
+        if (e.key === 'F12' || e.keyCode === 123) {
+            e.preventDefault();
+            return false;
+        }
+
+        // Disable Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+Shift+C (Element Select)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
+            e.preventDefault();
+            return false;
+        }
+
+        // Disable Ctrl+U (View Source)
+        if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+            e.preventDefault();
+            return false;
+        }
+
+        // Disable Ctrl+S (Save page)
+        if (e.ctrlKey && (e.key === 'S' || e.key === 's' || e.keyCode === 83)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Disable dragging images/assets
+    document.addEventListener('dragstart', (e) => {
+        if (e.target.tagName === 'IMG') {
+            e.preventDefault();
+        }
+    });
+
+    // Anti-DevTools Debugger loop (pauses page execution if Inspect is forced open)
+    const preventInspect = () => {
+        function freeze() {
+            try {
+                (function() {
+                    const func = function() {
+                        debugger;
+                    };
+                    func();
+                })();
+            } catch (err) {}
+            setTimeout(freeze, 50);
+        }
+        freeze();
+    };
+    
+    // Run debugger protection
+    preventInspect();
+});
